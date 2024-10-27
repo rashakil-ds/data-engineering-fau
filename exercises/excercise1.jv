@@ -2,53 +2,26 @@
 
 pipeline AirportsPipeline {
 
-  // 1. We describe the structure of the pipeline,
-  // usually at the top of the pipeline.
-  // by connecting blocks via pipes. 
-
-  //2. Syntax of a pipe
-  // connecting the block CarsExtractor
-  // with the block CarsTextFileInterpreter.
-
   AirportsExtractor
     -> AirportsTextFileInterpreter
     -> AirportsCSVInterpreter
     -> AirportsTableInterpreter
     -> AirportsLoader;
    
-
-
-  // 3. Below the pipes, we usually define the blocks 
-  // that are connected by the pipes.
-
-  // 4. Blocks instantiate a block type by using the oftype keyword.
-  // The block type defines the available properties that the block
-  // can use to specify the intended behavior of the block 
   block AirportsExtractor oftype HttpExtractor {
 
-    // 5. Properties are assigned to concrete values.
-    // Here, we specify the URL where the file shall be downloaded from.
     url: "https://opendata.rhein-kreis-neuss.de/api/explore/v2.1/catalog/datasets/rhein-kreis-neuss-flughafen-weltweit/exports/csv?lang=en&timezone=Europe%2FBerlin&use_labels=true&delimiter=%3B";
   }
 
- //block AirportsExtractor oftype FilePicker {
-  // path: "./agency.txt";
- //}
-  // 6. The HttpExtractor requires no input and produces a binary file as output.
-  // This file has to be interpreted, e.g., as text file.
+
   block AirportsTextFileInterpreter oftype TextFileInterpreter { }
 
-  // 7. Next, we interpret the text file as sheet.
-  //Interprets an input file as a csv-file containing string-values delimited by delimiter and outputs a Sheet.
+
   block AirportsCSVInterpreter oftype CSVInterpreter {
     delimiter: ";";
   }
 
- 
 
-  // 8. As a next step, we interpret the sheet as a table by adding structure.
-  // We define a value type per column that specifies the data type of the column.
-  // Rows that include values that are not valid according to the their value types are dropped automatically. 
   block AirportsTableInterpreter oftype TableInterpreter {
     header: true;
     
@@ -67,10 +40,6 @@ pipeline AirportsPipeline {
     ];
   }
 
-  // 9. As a last step, we load the table into a sink,
-  // here into a sqlite file.
-  // The structural information of the table is used
-  // to generate the correct table.
   block AirportsLoader oftype SQLiteLoader {
     table: "airports";
     file: "./airports.sqlite";
