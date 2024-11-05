@@ -1,0 +1,63 @@
+// Exercise 02 on Jayvee pipeline to process tree planting dataset
+// KM Rashedul Alam
+pipeline TreePlantingDatasetPipeline {
+
+    // Workflow Pipeline 
+    TreeDatasetExtractor
+        -> TxtFileInterpreter
+        -> CsvDataInterpreter
+        -> TableInterpreter
+        -> SQLiteFinalDataLoader;
+
+    // Extract CSV data from give URL
+    block TreeDatasetExtractor oftype HttpExtractor {
+        url: "https://opendata.rhein-kreis-neuss.de/api/v2/catalog/datasets/stadt-neuss-herbstpflanzung-2023/exports/csv";
+    }
+
+    // Interpret the extracted file as plain text to prepare for CSV parsing
+    block TxtFileInterpreter oftype TextFileInterpreter { }
+
+    // Interpreting the text data as CSV data
+    block CsvDataInterpreter oftype CSVInterpreter {
+        delimiter: ";"; 
+    }
+
+    // data validation
+    constraint DistrictNameConstraint oftype RegexConstraint {
+        regex: /^Vogelsang/;
+    }
+
+    constraint GeoPointsConstraint oftype RegexConstraint {
+        regex: /^\d{1,3}\.\d+,\s*\d{1,3}\.\d+$/;
+    }
+
+    valuetype DistrictType oftype text {
+        constraints: [ DistrictNameConstraint ];
+    }
+
+    // Custom type 'id' with the geopoint format constraints
+    valuetype GeoPointType oftype text {
+        constraints: [ GeoPointsConstraint ];
+    }
+
+    //Interpreting CSV data
+    block TableInterpreter oftype TableInterpreter {
+        header: true; 
+
+        // validation and dropping 'baumart_deutsch'
+        columns: [
+            "lfd_nr" oftype integer,           
+            "stadtteil" oftype DistrictType,   
+            "standort" oftype text,            
+            "baumart_botanisch" oftype text,   
+            "id" oftype GeoPointType,          
+            "baumfamilie" oftype text          
+        ];
+    }
+
+    // Loading the validated data into a SQLite DB
+    block SQLiteFinalDataLoader oftype SQLiteLoader {
+        file: "./trees.sqlite";  // Target 
+        table: "trees";          // Given Name of DB
+    }
+}
