@@ -26,6 +26,11 @@ This project aims to explore greenhouse gas emissions from different industries 
 
 The Supply Chain Greenhouse Gas Emission Factors by NAICS 6 dataset provides greenhouse gas (GHG) emission factors for various industries in the United States, categorized by the six-digit NAICS (North American Industry Classification System) code. This dataset helps estimate emissions across supply chains by industry sector, allowing for analysis of carbon footprints related to production, transportation, and other operational stages within different economic sectors. It’s a valuable resource for understanding the environmental impact of industries and can support emissions reduction strategies and sustainability planning.
 
+### Datasource2: eia.gov Dataset (State energy-related CO2)
+* Metadata URL: https://www.eia.gov/environment/emissions/state/
+* Data URL: https://www.eia.gov/environment/emissions/state/
+* Data Type: XLSX
+
 ## Work Packages
 
 <!-- List of work packages ordered sequentially, each pointing to an issue with more details. -->
