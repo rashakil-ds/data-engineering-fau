@@ -19,7 +19,7 @@ This project aims to explore greenhouse gas emissions from different industries 
 
 <!-- Describe each datasources you plan to use in a section. Use the prefic "DatasourceX" where X is the id of the datasource. -->
 
-### Datasource1: ExampleSource
+### Datasource1: Data.gov Dataset
 * Metadata URL: https://catalog.data.gov/dataset/supply-chain-greenhouse-gas-emission-factors-v1-3-by-naics-6
 * Data URL: https://catalog.data.gov/dataset/supply-chain-greenhouse-gas-emission-factors-v1-3-by-naics-6/resource/19c7c85f-d3de-4a9b-9559-f8ac44f3a168
 * Data Type: CSV
