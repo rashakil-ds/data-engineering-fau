@@ -31,6 +31,8 @@ The Supply Chain Greenhouse Gas Emission Factors by NAICS 6 dataset provides gre
 * Data URL: https://www.eia.gov/environment/emissions/state/
 * Data Type: XLSX
 
+This dataset provides carbon dioxide emissions data for each U.S. state, broken down by various energy sectors, such as transportation, electricity, and industry. It enables state-by-state comparisons, which will complement the industry-specific emissions data from the NAICS-based dataset.
+
 ## Work Packages
 
 <!-- List of work packages ordered sequentially, each pointing to an issue with more details. -->
