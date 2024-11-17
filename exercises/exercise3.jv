@@ -5,7 +5,7 @@ pipeline EconomicDataPipeline {
     -> FileInterpreter
     -> SheetExtractor
     -> DataSelector
-    -> BondDataFilter
+    -> BondDataCleaner
     -> BondDataParser
     -> BondDataSaver;
 
@@ -34,7 +34,7 @@ pipeline EconomicDataPipeline {
   }
 
   // Filter out unnecessary columns for bond data
-  block BondDataFilter oftype ColumnDeleter {
+  block BondDataCleaner oftype ColumnDeleter {
     delete: [column B, column C];
   }
 
