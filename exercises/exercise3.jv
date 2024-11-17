@@ -1,0 +1,93 @@
+pipeline EconomicDataPipeline {
+
+  // Step 1: Download the Excel file directly from the given URL
+  DataFetcher
+    -> FileInterpreter
+    -> SheetExtractor
+    -> DataSelector
+    -> BondDataFilter
+    -> BondDataParser
+    -> BondDataSaver;
+
+  // Step 2: Extract GDP per Capita data separately
+  DataSelector
+    -> GdpDataFilter
+    -> GdpDataParser
+    -> GdpDataSaver;
+
+  // Block to download the Excel file from the provided link
+  block DataFetcher oftype HttpExtractor {
+    url: "https://thedocs.worldbank.org/en/doc/7d852628d96b9411d43e5d36d5dff941-0050062022/original/Graphs-Chapter-5-02082022.xlsx";
+  }
+
+  // Interpret the Excel workbook
+  block FileInterpreter oftype XLSXInterpreter { }
+
+  // Select the specific sheet named "Figure S5.1.2"
+  block SheetExtractor oftype SheetPicker {
+    sheetName: "Figure S5.1.2";
+  }
+
+  // Extract the data range from P2 to S45
+  block DataSelector oftype CellRangeSelector {
+    select: range P2:S45;
+  }
+
+  // Filter out unnecessary columns for bond data
+  block BondDataFilter oftype ColumnDeleter {
+    delete: [column B, column C];
+  }
+
+  // Filter columns for GDP data extraction
+  block GdpDataFilter oftype ColumnDeleter {
+    delete: [column B, column D];
+  }
+
+  // Parse Bond Issuance data
+  block BondDataParser oftype TableInterpreter {
+    header: false;
+    columns: [
+      "Country Code" oftype CountryCodeAlpha3,
+      "Bond Issuance Share" oftype BondPercentage
+    ];
+  }
+
+  // Parse GDP per Capita data
+  block GdpDataParser oftype TableInterpreter {
+    header: false;
+    columns: [
+      "Country Code" oftype CountryCodeAlpha3,
+      "GDP per Capita" oftype GdpAmount
+    ];
+  }
+
+  // Save Bond Issuance data into SQLite database
+  block BondDataSaver oftype SQLiteLoader {
+    table: "bondIssuance";
+    file: "./country-stats.sqlite";
+  }
+
+  // Save GDP per Capita data into SQLite database
+  block GdpDataSaver oftype SQLiteLoader {
+    table: "gdpPerCapita";
+    file: "./country-stats.sqlite";
+  }
+
+  // Define custom value types with constraints
+  valuetype GdpAmount oftype decimal {
+    constraints: [PositiveGdpCheck];
+  }
+
+  constraint PositiveGdpCheck on decimal: value > 0;
+
+  valuetype BondPercentage oftype decimal {
+    constraints: [BondShareRange];
+  }
+
+  constraint BondShareRange oftype RangeConstraint {
+    lowerBound: 0;
+    lowerBoundInclusive: true;
+    upperBound: 1;
+    upperBoundInclusive: true;
+  }
+}
