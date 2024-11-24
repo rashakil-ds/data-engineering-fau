@@ -1,50 +1,77 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[2]:
-
-
 import os
+import zipfile
+import requests
 import pandas as pd
 import sqlite3
-import requests
+from io import BytesIO
 
-# Step 1: Define the dataset URL and data directory
-url = "https://pasteur.epa.gov/uploads/10.23719/1531143/SupplyChainGHGEmissionFactors_v1.3.0_NAICS_CO2e_USD2022.csv"
-data_directory = './data'
-os.makedirs(data_directory, exist_ok=True)
+# Define directories
+data_directory = "../data"
+if not os.path.exists(data_directory):
+    os.makedirs(data_directory)
 
-# Step 2: Download the dataset and load it into a DataFrame
-try:
-    data = pd.read_csv(url)
-    print("Dataset loaded successfully.")
-except Exception as e:
-    print(f"Failed to load dataset: {e}")
-    exit(1)
+# North American countries list
+north_american_countries = [
+    "Canada", "United States", "Mexico", "Bermuda", "Bahamas, The",
+    "Barbados", "Cuba", "Haiti", "Dominican Republic", "Jamaica",
+    "Trinidad and Tobago", "Saint Kitts and Nevis", "Antigua and Barbuda",
+    "Saint Lucia", "Saint Vincent and the Grenadines", "Grenada", "Belize",
+    "Panama", "Costa Rica", "El Salvador", "Honduras", "Nicaragua",
+    "Guatemala"
+]
 
-# Step 3: Display basic information and clean the data
-print("\nColumns in the dataset:", data.columns)
-print("\nFirst few rows:", data.head())
-data.dropna(inplace=True)
-data.reset_index(drop=True, inplace=True)
+# URLs for GDP and education expenditure data
+url_gdp_zip = "https://api.worldbank.org/v2/en/indicator/NY.GDP.MKTP.KD.ZG?downloadformat=csv"
+url_edu_zip = "https://api.worldbank.org/v2/en/indicator/SE.XPD.TOTL.GD.ZS?downloadformat=csv"
 
-# Step 4: Store the cleaned data in a SQLite database
-db_file = os.path.join(data_directory, 'supply_chain_ghg_emissions.db')
-conn = sqlite3.connect(db_file)
+# Function to download and extract ZIP files
+def download_and_extract_zip(url, output_dir):
+    response = requests.get(url)
+    if response.status_code == 200:
+        with zipfile.ZipFile(BytesIO(response.content)) as z:
+            z.extractall(output_dir)
+            print(f"Extracted files to {output_dir}")
+            csv_files = [f for f in z.namelist() if f.endswith(".csv") and "Metadata" not in f]
+            return [os.path.join(output_dir, f) for f in csv_files]
+    else:
+        print(f"Failed to download data from {url}.")
+        return []
 
-table_name = 'ghg_emission_factors'
-data.to_sql(table_name, conn, if_exists='replace', index=False)
-conn.close()
-print(f"\nData saved to SQLite table '{table_name}' in {db_file}.")
+# Process CSV file (filtering and reshaping)
+def clean_and_reshape_data(file_path, countries, years):
+    df = pd.read_csv(file_path, skiprows=4)
+    # Filter countries and select years
+    df_filtered = df[df["Country Name"].isin(countries)][["Country Name", "Country Code"] + years]
+    # Reshape from wide to long format
+    df_long = df_filtered.melt(
+        id_vars=["Country Name", "Country Code"],
+        var_name="Year",
+        value_name="Value"
+    )
+    return df_long
 
-# Step 5: Confirmation of data storage
-with sqlite3.connect(db_file) as conn:
-    result = pd.read_sql(f"SELECT * FROM {table_name} LIMIT 5", conn)
-    print("\nSample data from SQLite database:\n", result)
+# Save cleaned data to SQLite
+def export_to_sqlite(df, table_name, db_path):
+    with sqlite3.connect(db_path) as conn:
+        df.to_sql(table_name, conn, if_exists="replace", index=False)
+    print(f"Saved table '{table_name}' to SQLite database at {db_path}.")
 
+# Download, process, and save GDP data
+gdp_files = download_and_extract_zip(url_gdp_zip, data_directory)
+edu_files = download_and_extract_zip(url_edu_zip, data_directory)
 
-# In[ ]:
+# Filter years
+years = [str(year) for year in range(2016, 2024)]
 
+# Clean and reshape data
+if gdp_files:
+    gdp_cleaned = clean_and_reshape_data(gdp_files[0], north_american_countries, years)
+    gdp_cleaned.to_csv(os.path.join(data_directory, "gdp_cleaned.csv"), index=False)
+    print("Cleaned GDP data saved as CSV.")
+    export_to_sqlite(gdp_cleaned, "gdp_data", os.path.join(data_directory, "data_cleaned.db"))
 
-
-
+if edu_files:
+    edu_cleaned = clean_and_reshape_data(edu_files[0], north_american_countries, years)
+    edu_cleaned.to_csv(os.path.join(data_directory, "edu_cleaned.csv"), index=False)
+    print("Cleaned Education Expenditure data saved as CSV.")
+    export_to_sqlite(edu_cleaned, "education_data", os.path.join(data_directory, "data_cleaned.db"))
