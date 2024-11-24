@@ -20,7 +20,7 @@ north_american_countries = [
     "Guatemala"
 ]
 
-# URLs for GDP and education expenditure data
+# URLs for GDP and education expenditure data from worldbank
 url_gdp_zip = "https://api.worldbank.org/v2/en/indicator/NY.GDP.MKTP.KD.ZG?downloadformat=csv"
 url_edu_zip = "https://api.worldbank.org/v2/en/indicator/SE.XPD.TOTL.GD.ZS?downloadformat=csv"
 
