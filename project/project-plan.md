@@ -12,7 +12,7 @@ Correlation Between Education Spending and GDP Growth in North America
 ## Description
 
 <!-- Describe your data science project in max. 200 words. Consider writing about why and how you attempt it. -->
-
+The project will investigate the potential relationship between public investment in education and economic growth, providing insights into how education funding impacts economic performance.
 
 ## Datasources
 
