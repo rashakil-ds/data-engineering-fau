@@ -20,7 +20,7 @@ north_american_countries = [
     "Guatemala"
 ]
 
-# URLs for GDP and education expenditure data from worldbank
+# URLs for GDP and education expenditure data from Worldbank
 url_gdp_zip = "https://api.worldbank.org/v2/en/indicator/NY.GDP.MKTP.KD.ZG?downloadformat=csv"
 url_edu_zip = "https://api.worldbank.org/v2/en/indicator/SE.XPD.TOTL.GD.ZS?downloadformat=csv"
 
@@ -37,7 +37,7 @@ def download_and_extract_zip(url, output_dir):
         print(f"Failed to download data from {url}.")
         return []
 
-# Process CSV file (filtering and reshaping)
+# Process CSV file to filtering and reshaping
 def clean_and_reshape_data(file_path, countries, years):
     df = pd.read_csv(file_path, skiprows=4)
     # Filter countries and select years
