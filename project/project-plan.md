@@ -18,19 +18,19 @@ Correlation Between Education Spending and GDP Growth in North America
 
 <!-- Describe each datasources you plan to use in a section. Use the prefic "DatasourceX" where X is the id of the datasource. -->
 
-### Datasource1: Communities and Crime
-* Metadata URL: 
-* Data URL: 
+### Datasource1: Worldbank (Government expenditure on education, total (% of GDP))
+* Metadata URL: https://data.worldbank.org/indicator/SE.XPD.TOTL.GD.ZS
+* Data URL: https://api.worldbank.org/v2/en/indicator/SE.XPD.TOTL.GD.ZS?downloadformat=csv
 * Data Type: Zip->CSV
 
+This dataset contains data on government expenditure on education as a percentage of GDP, covering countries worldwide. For this project, only data from North American countries for the years 2016–2023 were extracted
 
-
-### Datasource2: Communities and Crime Unnormalized
-* Metadata URL:
-* Data URL: 
+### Datasource2: Worldbank (GDP growth (annual %))
+* Metadata URL: https://data.worldbank.org/indicator/NY.GDP.MKTP.KD.ZG
+* Data URL: https://api.worldbank.org/v2/en/indicator/NY.GDP.MKTP.KD.ZG?downloadformat=csv
 * Data Type: Zip->CSV
 
-
+This dataset contains GDP growth rates for countries worldwide. We focused on North American countries for the years 2016–2023.
 
 ## Work Packages
 
