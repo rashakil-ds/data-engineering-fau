@@ -61,7 +61,7 @@ gdp_files = download_and_extract_zip(url_gdp_zip, data_directory)
 edu_files = download_and_extract_zip(url_edu_zip, data_directory)
 
 # Filter years
-years = [str(year) for year in range(2016, 2024)]
+years = [str(year) for year in range(2016, 2023)]
 
 # Clean and reshape data
 if gdp_files:
