@@ -1,6 +1,6 @@
 pipeline WeatherDataPipeline {
 
-    // pipeline flow
+    // Define the pipeline flow
     FetchDataZip
         -> ExtractArchiveContents
         -> SelectCSVFile
@@ -12,7 +12,7 @@ pipeline WeatherDataPipeline {
         -> TransformBatteryTempToFahrenheit
         -> SaveToSQLite;
 
-    // Step 01: Download the ZIP file
+    // Step 1: Download the ZIP file
     block FetchDataZip oftype HttpExtractor {
         url: "https://www.mowesta.com/data/measure/mowesta-dataset-20221107.zip";
     }
@@ -27,10 +27,10 @@ pipeline WeatherDataPipeline {
         path: "/data.csv";
     }
 
-    // Step 04: Read the raw text from the CSV file
+    // Step 4: Read the raw text from the CSV file
     block ReadCSVData oftype TextFileInterpreter {}
 
-    // Step 5 : Parse the CSV content into a structured table
+    // Step 5: Parse the CSV content into a structured table
     block ParseCSV oftype CSVInterpreter {
         delimiter: ";"; // Use semicolon as delimiter
     }
@@ -83,6 +83,12 @@ pipeline WeatherDataPipeline {
         uses: CelsiusToFahrenheit;
     }
 
+    // Step 10: Save the processed data into SQLite database
+    block SaveToSQLite oftype SQLiteLoader {
+        table: "temperatures";         // Table name as specified
+        file: "./temperatures.sqlite"; // Database file as specified
+    }
+
     // Define reusable constraint for month validation
     constraint ValidMonthConstraint on integer:
         value >= 1 and value <= 12;
@@ -98,11 +104,5 @@ pipeline WeatherDataPipeline {
 
     valuetype IdType oftype integer {
         constraints: [GreaterThanZeroConstraint];
-    }
-
-    // Step 10: Save the processed data into SQLite database
-    block SaveToSQLite oftype SQLiteLoader {
-        table: "temperatures";         // Table name as specified
-        file: "./temperatures.sqlite"; // Database file as specified
     }
 }
