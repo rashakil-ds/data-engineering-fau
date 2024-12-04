@@ -1,0 +1,103 @@
+pipeline ClimateDataPipeline {
+
+    // Start processing the pipeline
+    DownloadZipFile 
+        -> UnzipArchive
+        -> ExtractCSVFile
+        -> ReadRawText
+        -> ParseCSVFile
+        -> RenameBatteryColumn
+        -> ModifyColumnHeaders
+        -> ValidateData
+        -> ConvertTemperature
+        -> ConvertBatteryTemp
+        -> SaveToDatabase;
+
+    // Download the ZIP archive from the given URL
+    block DownloadZipFile oftype HttpExtractor {
+        url: "https://www.mowesta.com/data/measure/mowesta-dataset-20221107.zip";
+    }
+
+    // Extract contents from the ZIP file
+    block UnzipArchive oftype ArchiveInterpreter {
+        archiveType: "zip";
+    }
+
+    // Select and load the required CSV file
+    block ExtractCSVFile oftype FilePicker {
+        path: "/data.csv";
+    }
+
+    // Load the CSV file as raw text
+    block ReadRawText oftype TextFileInterpreter {}
+
+    // Parse the CSV into a structured table
+    block ParseCSVFile oftype CSVInterpreter {
+        delimiter: ";"; // German datasets often use semicolon
+    }
+
+    // Rename the battery temperature column to English
+    block RenameBatteryColumn oftype CellWriter {
+        at: cell J1; 
+        write: ["battery_temperature"];
+    }
+
+    // Rename the column headers for standardization
+    block ModifyColumnHeaders oftype CellWriter {
+        at: range A1:E1; 
+        write: ["device_id", "manufacturer", "device_model", "recorded_month", "ambient_temperature"];
+    }
+
+    // Enforce data integrity and specify data types
+    block ValidateData oftype TableInterpreter {
+        header: true;
+        columns: [
+            "device_id" oftype integer,
+            "manufacturer" oftype text,
+            "device_model" oftype text,
+            "recorded_month" oftype ValidMonth, // Apply constraints for 1–12
+            "ambient_temperature" oftype decimal,
+            "battery_temperature" oftype decimal
+        ];
+    }
+
+    // Transform Celsius to Fahrenheit
+    transform CelsiusToFahrenheit {
+        from CelsiusValue oftype decimal;
+        to FahrenheitValue oftype decimal;
+
+        FahrenheitValue: 32 + ((CelsiusValue * 9) / 5);
+    }
+
+    // Apply transformation to the ambient temperature column
+    block ConvertTemperature oftype TableTransformer {
+        inputColumns: ["ambient_temperature"];
+        outputColumn: "ambient_temperature";
+        uses: CelsiusToFahrenheit;
+    }
+
+    // Apply transformation to the battery temperature column
+    block ConvertBatteryTemp oftype TableTransformer {
+        inputColumns: ["battery_temperature"];
+        outputColumn: "battery_temperature";
+        uses: CelsiusToFahrenheit;
+    }
+
+    // Define constraints for valid month values
+    constraint MonthRangeConstraint oftype RangeConstraint {
+        lowerBound: 1;
+        lowerBoundInclusive: true;
+        upperBound: 12;
+        upperBoundInclusive: true;
+    }
+
+    valuetype ValidMonth oftype integer {
+        constraints: [MonthRangeConstraint];
+    }
+
+    // Save the processed data into an SQLite database
+    block SaveToDatabase oftype SQLiteLoader {
+        table: "climate_readings";
+        file: "./climate_data.sqlite";
+    }
+}
