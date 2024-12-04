@@ -12,30 +12,30 @@ pipeline WeatherDataPipeline {
         -> TransformBatteryTempToFahrenheit
         -> SaveToSQLite;
 
-    //  Download the ZIP file
+    // Step 01: Download the ZIP file
     block FetchDataZip oftype HttpExtractor {
         url: "https://www.mowesta.com/data/measure/mowesta-dataset-20221107.zip";
     }
 
-    // Extract the archive contents
+    // Step 2: Extract the archive contents
     block ExtractArchiveContents oftype ArchiveInterpreter {
         archiveType: "zip";
     }
 
-    // Select the CSV file named "data.csv"
+    // Step 3: Select the CSV file named "data.csv"
     block SelectCSVFile oftype FilePicker {
         path: "/data.csv";
     }
 
-    // Read the raw text from the CSV file
+    // Step 04: Read the raw text from the CSV file
     block ReadCSVData oftype TextFileInterpreter {}
 
-    // Parse the CSV content into a structured table
+    // Step 5 : Parse the CSV content into a structured table
     block ParseCSV oftype CSVInterpreter {
         delimiter: ";"; // Use semicolon as delimiter
     }
 
-    // Rename headers from German to English
+    // Step 6: Rename headers from German to English
     block RenameHeaders oftype CellWriter {
         at: range A1:F1; 
         write: [
@@ -48,16 +48,16 @@ pipeline WeatherDataPipeline {
         ];
     }
 
-    // Validate columns with appropriate constraints
+    // Step 7: Validate columns with appropriate constraints
     block ValidateDataColumns oftype TableInterpreter {
         header: true;
         columns: [
-            "id" oftype IdType,                  
-            "producer" oftype text,             
-            "model" oftype text,                
-            "month" oftype MonthValidator,      
-            "temperature" oftype decimal,       
-            "battery_temperature" oftype decimal 
+            "id" oftype IdType,                  // ID must be > 0
+            "producer" oftype text,             // Producer name
+            "model" oftype text,                // Device model
+            "month" oftype MonthValidator,      // Month must be between 1–12
+            "temperature" oftype decimal,       // Temperature in °C
+            "battery_temperature" oftype decimal // Battery temperature in °C
         ];
     }
 
@@ -69,14 +69,14 @@ pipeline WeatherDataPipeline {
         fahrenheit: 32 + ((celsius * 9) / 5);
     }
 
-    // Transform "temperature" column to Fahrenheit
+    // Step 8: Transform "temperature" column to Fahrenheit
     block TransformTemperatureToFahrenheit oftype TableTransformer {
         inputColumns: ["temperature"];
         outputColumn: "temperature"; // Overwrite the same column
         uses: CelsiusToFahrenheit;
     }
 
-    // Transform "battery_temperature" column to Fahrenheit
+    // Step 9: Transform "battery_temperature" column to Fahrenheit
     block TransformBatteryTempToFahrenheit oftype TableTransformer {
         inputColumns: ["battery_temperature"];
         outputColumn: "battery_temperature"; // Overwrite the same column
@@ -84,17 +84,12 @@ pipeline WeatherDataPipeline {
     }
 
     // Define reusable constraint for month validation
-    constraint ValidMonthConstraint oftype RangeConstraint {
-        lowerBound: 1;
-        lowerBoundInclusive: true;
-        upperBound: 12;
-        upperBoundInclusive: true;
-    }
+    constraint ValidMonthConstraint on integer:
+        value >= 1 and value <= 12;
 
-    // Define reusable constraint for id validation
-    constraint IdGreaterThanZeroConstraint oftype GreaterThanConstraint {
-        lowerBound: 0;
-    }
+    // Define reusable constraint for ID validation
+    constraint GreaterThanZeroConstraint on integer:
+        value > 0;
 
     // Define value types for validation
     valuetype MonthValidator oftype integer {
@@ -102,12 +97,12 @@ pipeline WeatherDataPipeline {
     }
 
     valuetype IdType oftype integer {
-        constraints: [IdGreaterThanZeroConstraint];
+        constraints: [GreaterThanZeroConstraint];
     }
 
-    //  Save the processed data into SQLite database
+    // Step 10: Save the processed data into SQLite database
     block SaveToSQLite oftype SQLiteLoader {
-        table: "temperatures";         
-        file: "./temperatures.sqlite";
+        table: "temperatures";         // Table name as specified
+        file: "./temperatures.sqlite"; // Database file as specified
     }
 }
