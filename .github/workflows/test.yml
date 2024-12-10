@@ -25,7 +25,7 @@ jobs:
           pip install pandas
           pip install sqlalchemy
           pip install requests
-          pip install os
+          
 
 
       - name: Run tests file
