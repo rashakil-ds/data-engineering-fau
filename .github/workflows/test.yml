@@ -1,0 +1,35 @@
+name: Test CI 
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      # python version 3.9 installation
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Install all dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas
+          pip install zipfile
+          pip install sqlalchemy
+          pip install requests
+          pip install os
+
+
+      - name: Run tests file
+        run: |
+          chmod +x ./project/tests.sh
+          ./project/tests.sh 
