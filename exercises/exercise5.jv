@@ -1,0 +1,78 @@
+pipeline GTFSProcessor {
+
+  // Download GTFS data from the specified URL
+  GTFSDownloader
+    -> ArchiveHandler
+    -> FilePickerStops
+    -> FileDecoderStops
+    -> CSVParserStops
+    -> TableHandlerStops
+    -> DatabaseWriter;
+
+  // Block to download the GTFS zip file
+  block GTFSDownloader oftype HttpExtractor {
+      url: "https://gtfs.rhoenenergie-bus.de/GTFS.zip"; 
+  }
+
+  // Block to interpret the downloaded zip archive
+  block ArchiveHandler oftype ArchiveInterpreter {
+      archiveType: "zip"; 
+  }
+
+  // Block to select the stops.txt file from the zip archive
+  block FilePickerStops oftype FilePicker {
+      path: "./stops.txt"; 
+  }
+
+  // Block to decode the stops.txt file as UTF-8 text
+  block FileDecoderStops oftype TextFileInterpreter {
+      encoding: "utf8"; 
+  }
+
+  // Block to interpret the stops.txt file as CSV
+  block CSVParserStops oftype CSVInterpreter {
+      delimiter: ","; 
+      enclosing: '"'; 
+  }
+
+  // Custom constraints for validation
+  constraint LatitudeLongitudeRange oftype RangeConstraint {
+      lowerBound: -90;
+      upperBound: 90;
+      lowerBoundInclusive: true;
+      upperBoundInclusive: true;
+  }
+
+  valuetype Coordinates oftype decimal {
+      constraints: [LatitudeLongitudeRange]; 
+  }
+
+  constraint FixedZoneID oftype RangeConstraint {
+      lowerBound: 1925;
+      upperBound: 1925;
+      lowerBoundInclusive: true;
+      upperBoundInclusive: true;
+  }
+
+  valuetype ZoneIdentifier oftype integer {
+      constraints: [FixedZoneID]; 
+  }
+
+  // Block to define the table structure and filter data
+  block TableHandlerStops oftype TableInterpreter {
+      header: true; 
+      columns: [
+          "stop_id" oftype integer,
+          "stop_name" oftype text,
+          "stop_lat" oftype Coordinates,
+          "stop_lon" oftype Coordinates,
+          "zone_id" oftype ZoneIdentifier
+      ]; 
+  }
+
+  // Block to write the processed data into a SQLite database
+  block DatabaseWriter oftype SQLiteLoader {
+      table: "stops"; 
+      file: "gtfs.sqlite"; 
+  }
+}
